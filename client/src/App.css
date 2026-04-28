@@ -1,0 +1,21 @@
+/* =========================
+   SMART SCROLLBAR (theme-aware)
+   ========================= */
+
+/* Универсальные переменные */
+:root {
+  --scrollbar-thumb: oklch(from var(--foreground) l c h / 0.25);
+  --scrollbar-thumb-hover: oklch(from var(--foreground) l c h / 0.45);
+}
+
+/* Можно чуть по-другому для тёмных */
+.dark {
+  --scrollbar-thumb: oklch(from var(--foreground) l c h / 0.2);
+  --scrollbar-thumb-hover: oklch(from var(--foreground) l c h / 0.4);
+}
+
+/* ===== Firefox ===== */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}

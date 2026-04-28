@@ -1,0 +1,107 @@
+services:
+
+  client:
+    container_name: sodfu-cds-client-dev
+    image: sodfu-cds/client-dev
+    restart: on-failure
+    build:
+      context: client
+      dockerfile: Dockerfile
+      target: dev
+    ports:
+      - "5173:5173" # Проброс порта для среды разработки
+    environment:
+      NODE_ENV: dev
+      VITE_API_URL: ${VITE_API_URL}
+      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING: "true"
+    volumes:
+      - ./client:/app
+      # - /mnt/c/Users/shilyaevan/prog/db-invent/frontend:/app
+      - /app/node_modules # это для того, чтобы node_modules не удалялись в контейнере
+    networks:
+      - dev-network
+    command: npm run dev -- --host
+    depends_on:
+      - server
+
+  server:
+    container_name: sodfu-cds-server-dev
+    image: sodfu-cds/server-dev
+    restart: on-failure
+    build:
+      context: server
+      dockerfile: Dockerfile
+      target: dev
+    ports:
+      - "3000:3000" # Проброс порта для среды разработки
+      - "9229:9229" # Проброс порта для дебага
+    environment:
+      NODE_ENV: dev
+      CHOKIDAR_USEPOLLING: "true"
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DATABASE_URL: "postgresql://${DEV_USER}:${DEV_PASS}@postgres:${DEV_PORT}/${DEV_DB}"
+    volumes:
+      - ./server:/app
+      - /app/node_modules # это для того, чтобы node_modules не удалялись в контейнере
+      # - build-output:/app/build # volume для build react на проде
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - dev-network
+    command: npm run start:debug
+  
+  postgres:
+    container_name: sodfu-cds-postgres-dev
+    image: postgres:16
+    restart: on-failure
+    environment:
+      POSTGRES_USER: ${DEV_USER}
+      POSTGRES_PASSWORD: ${DEV_PASS}
+      POSTGRES_DB: ${DEV_DB}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DEV_USER} -d ${DEV_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "${DEV_PORT}:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./backups:/backup
+    networks:
+      - dev-network
+  
+  backup:
+    container_name: sodfu-cds-cron-dev
+    image: prodrigestivill/postgres-backup-local
+    restart: on-failure
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: ${DEV_DB}
+      POSTGRES_USER: ${DEV_USER}
+      POSTGRES_PASSWORD: ${DEV_PASS}
+
+      SCHEDULE: "0 */2 * * *"
+      BACKUP_KEEP_DAYS: 3
+      BACKUP_KEEP_WEEKS: 0
+      BACKUP_KEEP_MONTHS: 0
+
+      BACKUP_PREFIX: cds_backup
+    volumes:
+      - ./backups:/backup # Монтируем ту же директорию с хоста внутрь контейнера по пути /backup, как ожидает образ
+    networks:
+      - dev-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  db-data:
+    driver: local
+    
+networks:
+  dev-network:
+    driver: bridge

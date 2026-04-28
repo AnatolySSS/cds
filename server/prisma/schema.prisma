@@ -1,0 +1,271 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Region {
+  id       String  @id @default(uuid()) @db.Uuid
+  name     String  @unique
+  code     String  @unique
+  isActive Boolean @default(true)
+  order    Int?
+
+  courts Court[]
+}
+
+model CassationDistrict {
+  id       String  @id @default(uuid()) @db.Uuid
+  name     String  @unique
+  code     String  @unique
+  isActive Boolean @default(true)
+  order    Int?
+
+  courts Court[]
+}
+
+model CourtType {
+  id       String  @id @default(uuid()) @db.Uuid
+  name     String  @unique
+  code     String  @unique
+  isActive Boolean @default(true)
+  order    Int?
+
+  courts Court[]
+}
+
+model Court {
+  id             String            @id @default(uuid()) @db.Uuid
+  name           String            @unique
+  address        String?
+  phone          String?
+  email          String?
+  site           String?
+  regionId       String            @db.Uuid
+  cassDistrictId String            @db.Uuid
+  typeId         String            @db.Uuid
+  serverNumbers  Int               @default(1)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime?         @updatedAt
+  deletedAt      DateTime?
+  instances      Instance[]
+  region         Region            @relation(fields: [regionId], references: [id])
+  cassDistrict   CassationDistrict @relation(fields: [cassDistrictId], references: [id])
+  type           CourtType         @relation(fields: [typeId], references: [id])
+}
+
+model Division {
+  id       String  @id @default(uuid()) @db.Uuid
+  name     String  @unique
+  code     String  @unique
+  number   String? @unique
+  isActive Boolean @default(true)
+  order    Int?
+
+  employees Employee[]
+}
+
+model Employee {
+  id         String    @id @default(uuid()) @db.Uuid
+  cn         String    @unique
+  full_name  String
+  department String
+  title      String
+  divisionId String    @db.Uuid
+  login      String    @unique
+  is_present Boolean
+  email      String?
+  phone      String?
+  dn         String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime? @updatedAt
+  deletedAt  DateTime?
+  user       User?
+
+  division Division @relation(fields: [divisionId], references: [id])
+}
+
+model User {
+  id               String    @id @default(uuid()) @db.Uuid
+  passwordHash     String
+  refreshTokenHash String?
+  role             UserRole  @default(USER)
+  lastLoginAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime? @updatedAt
+  deletedAt        DateTime?
+  employee         Employee  @relation(fields: [id], references: [id])
+}
+
+model NaturalPerson {
+  id             String    @id @default(uuid()) @db.Uuid
+  name           String
+  middleName     String?
+  surname        String?
+  passportNumber String?   @unique
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime? @updatedAt
+  deletedAt      DateTime?
+  party          Party     @relation(fields: [id], references: [id])
+}
+
+model IndividualEntrepreneur {
+  id               String    @id @default(uuid()) @db.Uuid
+  name             String
+  inn              String
+  ogrnip           String?
+  registrationDate DateTime? @db.Date
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime? @updatedAt
+  deletedAt        DateTime?
+  party            Party     @relation(fields: [id], references: [id])
+}
+
+model LegalEntity {
+  id               String    @id @default(uuid()) @db.Uuid
+  shortName        String
+  fullName         String?
+  inn              String    @db.VarChar(12)
+  ogrn             String?   @db.VarChar(13)
+  actualAddress    String?
+  legalAddress     String?
+  phone            String?
+  email            String?
+  registrationDate DateTime? @db.Date
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime? @updatedAt
+  deletedAt        DateTime?
+  party            Party     @relation(fields: [id], references: [id])
+}
+
+model FinancialActivityType {
+  id       String  @id @default(uuid()) @db.Uuid
+  code     String  @unique
+  name     String  @unique
+  isActive Boolean @default(true)
+  order    Int?
+
+  financialOrganizations FinancialOrganization[]
+}
+
+model FinancialOrganization {
+  id                        String                @id @default(uuid()) @db.Uuid
+  activityTypeId            String                @db.Uuid
+  terminationDate           DateTime?             @db.Date
+  terminationDecisionNumber String?
+  externalId                String
+  createdAt                 DateTime              @default(now())
+  updatedAt                 DateTime?             @updatedAt
+  actualAddress             String?
+  email                     String?
+  fullName                  String?
+  inn                       String                @unique @db.VarChar(12)
+  legalAddress              String?
+  ogrn                      String?               @db.VarChar(13)
+  phone                     String?
+  registrationDate          DateTime?             @db.Date
+  shortName                 String
+  activityType              FinancialActivityType @relation(fields: [activityTypeId], references: [id])
+  party                     Party                 @relation(fields: [id], references: [id])
+}
+
+model Party {
+  id                     String                  @id @default(uuid()) @db.Uuid
+  type                   PartyType
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime?               @updatedAt
+  deletedAt              DateTime?
+  courtCases             CourtCaseParty[]
+  financialOrganization  FinancialOrganization?
+  individualEntrepreneur IndividualEntrepreneur?
+  legalEntity            LegalEntity?
+  naturalPerson          NaturalPerson?
+}
+
+model CourtCaseType {
+  id         String      @id @default(uuid()) @db.Uuid
+  name       String      @unique
+  code       String      @unique
+  courtCases CourtCase[]
+}
+
+model CourtCase {
+  id              String           @id @default(uuid()) @db.Uuid
+  courtCaseTypeId String           @db.Uuid
+  uid             String           @unique
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime?        @updatedAt
+  deletedAt       DateTime?
+  courtCaseType   CourtCaseType    @relation(fields: [courtCaseTypeId], references: [id])
+  parties         CourtCaseParty[]
+  instances       Instance[]
+  representations Representation[]
+}
+
+model ProceduralStatus {
+  id               String           @id @default(uuid()) @db.Uuid
+  name             String           @unique
+  courtCaseParties CourtCaseParty[]
+}
+
+model CourtCaseParty {
+  id                 String           @id @default(uuid()) @db.Uuid
+  courtCaseId        String           @db.Uuid
+  partyId            String           @db.Uuid
+  proceduralStatusId String           @db.Uuid
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime?        @updatedAt
+  deletedAt          DateTime?
+  courtCase          CourtCase        @relation(fields: [courtCaseId], references: [id])
+  party              Party            @relation(fields: [partyId], references: [id])
+  proceduralStatus   ProceduralStatus @relation(fields: [proceduralStatusId], references: [id])
+  represents         Representation[] @relation("RepresentativeParty")
+  representedBy      Representation[] @relation("RepresentedParty")
+
+  @@unique([courtCaseId, partyId, proceduralStatusId])
+}
+
+model Representation {
+  id               String         @id @default(uuid()) @db.Uuid
+  courtCaseId      String         @db.Uuid
+  representativeId String         @db.Uuid
+  representedId    String         @db.Uuid
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime?      @updatedAt
+  deletedAt        DateTime?
+  courtCase        CourtCase      @relation(fields: [courtCaseId], references: [id])
+  representative   CourtCaseParty @relation("RepresentativeParty", fields: [representativeId], references: [id])
+  represented      CourtCaseParty @relation("RepresentedParty", fields: [representedId], references: [id])
+}
+
+model Instance {
+  id          String    @id @default(uuid()) @db.Uuid
+  courtId     String    @db.Uuid
+  courtCaseId String    @db.Uuid
+  caseNumber  String
+  link        String?
+  regDate     DateTime? @db.Date
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime? @updatedAt
+  deletedAt   DateTime?
+  courtCase   CourtCase @relation(fields: [courtCaseId], references: [id])
+  court       Court     @relation(fields: [courtId], references: [id])
+
+  @@unique([courtId, caseNumber])
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  USER
+}
+
+enum PartyType {
+  NATURAL
+  LEGAL
+  INDIVIDUAL
+  FINANCIAL_ORGANIZATION
+}
