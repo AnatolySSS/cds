@@ -18,7 +18,7 @@ services:
     volumes:
       - ./client:/app
       # - /mnt/c/Users/shilyaevan/prog/db-invent/frontend:/app
-      - /app/node_modules # это для того, чтобы node_modules не удалялись в контейнере
+      - client_node_modules:/app/node_modules # это для того, чтобы node_modules не удалялись в контейнере
     networks:
       - dev-network
     command: npm run dev -- --host
@@ -44,7 +44,7 @@ services:
       DATABASE_URL: "postgresql://${DEV_USER}:${DEV_PASS}@postgres:${DEV_PORT}/${DEV_DB}"
     volumes:
       - ./server:/app
-      - /app/node_modules # это для того, чтобы node_modules не удалялись в контейнере
+      - server_node_modules:/app/node_modules # это для того, чтобы node_modules не удалялись в контейнере
       # - build-output:/app/build # volume для build react на проде
     depends_on:
       postgres:
@@ -101,7 +101,11 @@ services:
 volumes:
   db-data:
     driver: local
-    
+  client_node_modules:
+    driver: local
+  server_node_modules:
+    driver: local
+
 networks:
   dev-network:
     driver: bridge
