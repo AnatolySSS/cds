@@ -17,7 +17,6 @@ services:
       WATCHPACK_POLLING: "true"
     volumes:
       - ./client:/app
-      # - /mnt/c/Users/shilyaevan/prog/db-invent/frontend:/app
       - client_node_modules:/app/node_modules # это для того, чтобы node_modules не удалялись в контейнере
     networks:
       - dev-network
@@ -45,7 +44,6 @@ services:
     volumes:
       - ./server:/app
       - server_node_modules:/app/node_modules # это для того, чтобы node_modules не удалялись в контейнере
-      # - build-output:/app/build # volume для build react на проде
     depends_on:
       postgres:
         condition: service_healthy
@@ -55,7 +53,10 @@ services:
   
   postgres:
     container_name: sodfu-cds-postgres-dev
-    image: postgres:16
+    image: sodfu-cds/postgres-dev
+    build:
+      context: ./docker/postgres
+      dockerfile: Dockerfile
     restart: on-failure
     environment:
       POSTGRES_USER: ${DEV_USER}
@@ -76,7 +77,10 @@ services:
   
   backup:
     container_name: sodfu-cds-cron-dev
-    image: prodrigestivill/postgres-backup-local
+    image: sodfu-cds/backup-dev
+    build:
+      context: ./docker/backup
+      dockerfile: Dockerfile
     restart: on-failure
     environment:
       POSTGRES_HOST: postgres
@@ -102,9 +106,7 @@ volumes:
   db-data:
     driver: local
   client_node_modules:
-    driver: local
   server_node_modules:
-    driver: local
 
 networks:
   dev-network:
